@@ -6,15 +6,17 @@ import "@openzeppelin/contracts/cryptography/MerkleProof.sol";
 import "./interfaces/IMerkleDistributor.sol";
 
 contract MerkleDistributor is IMerkleDistributor {
+    uint256 public immutable override minClaimTime;
     address public immutable override token;
     bytes32 public immutable override merkleRoot;
 
     // This is a packed array of booleans.
     mapping(uint256 => uint256) private claimedBitMap;
 
-    constructor(address token_, bytes32 merkleRoot_) public {
+    constructor(address token_, bytes32 merkleRoot_, uint256 minClaimTime_) public {
         token = token_;
         merkleRoot = merkleRoot_;
+        minClaimTime = minClaimTime_;
     }
 
     function isClaimed(uint256 index) public view override returns (bool) {
@@ -32,6 +34,7 @@ contract MerkleDistributor is IMerkleDistributor {
     }
 
     function claim(uint256 index, address account, uint256 amount, bytes32[] calldata merkleProof) external override {
+        require(block.timestamp >= minClaimTime, "MerkleDistributor: prior to minimum claim time.");
         require(!isClaimed(index), 'MerkleDistributor: Drop already claimed.');
 
         // Verify the merkle proof.
